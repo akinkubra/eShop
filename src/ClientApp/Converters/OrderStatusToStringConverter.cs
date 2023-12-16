@@ -18,6 +18,7 @@ public class OrderStatusToStringConverter : BaseConverterOneWay<OrderStatus, str
             OrderStatus.Shipped => "SHIPPED",
             OrderStatus.StockConfirmed => "STOCK CONFIRMED",
             OrderStatus.Submitted => "SUBMITTED",
+            OrderStatus.Completed => "COMPLETED",
             _ => string.Empty
         };
     }

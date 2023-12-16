@@ -133,4 +133,34 @@ public class OrdersWebApiTest
         Assert.IsType<Ok<IEnumerable<CardType>>>(result);
         Assert.Same(fakeDynamicResult, result.Value);
     }
+
+    [Fact]
+    public async Task Complete_order_with_requestId_success()
+    {
+        // Arrange
+        _mediatorMock.Send(Arg.Any<IdentifiedCommand<CompleteOrderCommand, bool>>(), default)
+            .Returns(Task.FromResult(true));
+
+        // Act
+        var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
+        var result = await OrdersApi.CompleteOrderAsync(Guid.NewGuid(), new CompleteOrderRequest(1), orderServices);
+
+        // Assert
+        Assert.IsType<Ok>(result.Result);
+    }
+
+    [Fact]
+    public async Task Complete_order_bad_request()
+    {
+        // Arrange
+        _mediatorMock.Send(Arg.Any<IdentifiedCommand<CompleteOrderCommand, bool>>(), default)
+            .Returns(Task.FromResult(true));
+
+        // Act
+        var orderServices = new OrderServices(_mediatorMock, _orderQueriesMock, _identityServiceMock, _loggerMock);
+        var result = await OrdersApi.CompleteOrderAsync(Guid.Empty, new CompleteOrderRequest(1), orderServices);
+
+        // Assert
+        Assert.IsType<BadRequest<string>>(result.Result);
+    }
 }

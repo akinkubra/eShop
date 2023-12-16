@@ -2,6 +2,7 @@
 
 using eShop.Ordering.Domain.AggregatesModel.OrderAggregate;
 using eShop.Ordering.UnitTests.Domain;
+using Ordering.Domain.Events;
 
 public class OrderAggregateTest
 {
@@ -171,6 +172,29 @@ public class OrderAggregateTest
         //Act         
         fakeOrder.AddDomainEvent(@fakeEvent);
         fakeOrder.RemoveDomainEvent(@fakeEvent);
+        //Assert
+        Assert.Equal(fakeOrder.DomainEvents.Count, expectedResult);
+    }
+
+    [Fact]
+    public void Add_event_Complete_Order_new_event()
+    {
+        //Arrange   
+        var street = "fakeStreet";
+        var city = "FakeCity";
+        var state = "fakeState";
+        var country = "fakeCountry";
+        var zipcode = "FakeZipCode";
+        var cardTypeId = 5;
+        var cardNumber = "12";
+        var cardSecurityNumber = "123";
+        var cardHolderName = "FakeName";
+        var cardExpiration = DateTime.UtcNow.AddYears(1);
+        var expectedResult = 2;
+
+        //Act 
+        var fakeOrder = new Order("1", "fakeName", new Address(street, city, state, country, zipcode), cardTypeId, cardNumber, cardSecurityNumber, cardHolderName, cardExpiration);
+        fakeOrder.AddDomainEvent(new OrderCompletedDomainEvent(fakeOrder));
         //Assert
         Assert.Equal(fakeOrder.DomainEvents.Count, expectedResult);
     }

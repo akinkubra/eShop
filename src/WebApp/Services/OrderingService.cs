@@ -16,6 +16,14 @@ public class OrderingService(HttpClient httpClient)
         requestMessage.Content = JsonContent.Create(request);
         return httpClient.SendAsync(requestMessage);
     }
+
+    public async Task CompleteOrderAsync(CompleteOrderRequest request, Guid requestId)
+    {
+        var requestMessage = new HttpRequestMessage(HttpMethod.Post, remoteServiceBaseUrl + "complete");
+        requestMessage.Headers.Add("x-requestid", requestId.ToString());
+        requestMessage.Content = JsonContent.Create(request);
+        await httpClient.SendAsync(requestMessage);
+    }
 }
 
 public record OrderRecord(
@@ -23,3 +31,6 @@ public record OrderRecord(
     DateTime Date,
     string Status,
     decimal Total);
+
+public record CompleteOrderRequest(
+    int OrderNumber);

@@ -7,6 +7,7 @@ public static class OrdersApi
     public static RouteGroupBuilder MapOrdersApi(this RouteGroupBuilder app)
     {
         app.MapPut("/cancel", CancelOrderAsync);
+        app.MapPut("/complete", CompleteOrderAsync);
         app.MapPut("/ship", ShipOrderAsync);
         app.MapGet("{orderId:int}", GetOrderAsync);
         app.MapGet("/", GetOrdersByUserAsync);
@@ -73,6 +74,46 @@ public static class OrdersApi
         }
 
         return TypedResults.Ok();
+    }
+
+    public static async Task<Results<Ok, BadRequest<string>, ProblemHttpResult>> CompleteOrderAsync(
+      [FromHeader(Name = "x-requestid")] Guid requestId,
+      CompleteOrderRequest request,
+      [AsParameters] OrderServices services)
+    {
+        if (requestId == Guid.Empty)
+        {
+            services.Logger.LogWarning("Invalid IntegrationEvent - RequestId is missing - {@IntegrationEvent}", request);
+            return TypedResults.BadRequest("Empty GUID is not valid for request ID");
+        }
+
+        using (services.Logger.BeginScope(new List<KeyValuePair<string, object>> { new("IdentifiedCommandId", requestId) }))
+        {
+            var completeOrderCommand = new CompleteOrderCommand(request.OrderNumber);
+
+            var requestCompletedOrder = new IdentifiedCommand<CompleteOrderCommand, bool>(completeOrderCommand, requestId);
+
+            services.Logger.LogInformation(
+               "Sending command: {CommandName} - {IdProperty}: {CommandId} ({@Command})",
+               requestCompletedOrder.GetGenericTypeName(),
+               nameof(requestCompletedOrder.Command.OrderNumber),
+               requestCompletedOrder.Command.OrderNumber,
+               requestCompletedOrder);
+
+            var commandResult = await services.Mediator.Send(requestCompletedOrder);
+
+            if (commandResult)
+            {
+                services.Logger.LogInformation("CompleteOrderCommand succeeded - RequestId: {RequestId}", requestId);
+            }
+            else
+            {
+                services.Logger.LogWarning("CompleteOrderCommand failed - RequestId: {RequestId}", requestId);
+                return TypedResults.Problem(detail: "Complete order failed to process.", statusCode: 500);
+            }
+
+            return TypedResults.Ok();
+        }
     }
 
     public static async Task<Results<Ok<Order>, NotFound>> GetOrderAsync(int orderId, [AsParameters] OrderServices services)
@@ -178,3 +219,12 @@ public record CreateOrderRequest(
     int CardTypeId,
     string Buyer,
     List<BasketItem> Items);
+
+public record CompleteOrderRequest
+{
+    public int OrderNumber { get; set; }
+    public CompleteOrderRequest(int orderNumber)
+    {
+        OrderNumber = orderNumber;
+    }
+}

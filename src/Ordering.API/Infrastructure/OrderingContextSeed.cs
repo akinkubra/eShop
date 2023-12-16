@@ -35,7 +35,8 @@ public class OrderingContextSeed: IDbSeeder<OrderingContext>
             OrderStatus.StockConfirmed,
             OrderStatus.Paid,
             OrderStatus.Shipped,
-            OrderStatus.Cancelled
+            OrderStatus.Cancelled,
+            OrderStatus.Completed
         ];
     }
 }
